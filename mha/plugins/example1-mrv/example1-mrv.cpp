@@ -20,11 +20,6 @@
 #include "uv.h"
 #include "julia.h"
 
-//#ifdef JULIA_DEFINE_FAST_TLS // only available in Julia v0.7 and above
-//JULIA_DEFINE_FAST_TLS()
-//#endif
-
-
 /*
  * The simplest example of an \mha plugin.
  *
@@ -88,10 +83,6 @@ public:
         dlerror();
         // int dlclose(void *handle); // where should I run dlclose?
 
-        // First argument is the usr/bin directory where the julia binary is, or NULL to guess.
-        // Second argument is the path of a system image file (*.ji) relative to the
-        // first argument path, or relative to the default julia home dir.
-        // The default is something like ../lib/julia/sys.ji
         jl_init_with_image__threading(NULL, (char*)libmrv_path.c_str());
 
         cout << foo(1) << '\n';
