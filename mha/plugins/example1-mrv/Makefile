@@ -15,15 +15,8 @@
 
 include ../plugin.mk
 
-# LDFLAGS += -lmrv -ljulia -L/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/test-mrv
-
 CXXFLAGS += -fPIC -L/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
 LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
-
-# CXXFLAGS += -fPIC -lmrv -ljulia -L../../../external_libs/test-mrv -Wl,-rpath -Wl,../../../external_libs/test-mrv
-# CFLAGS += -fPIC -lmrv -ljulia -L../../../external_libs/test-mrv -Wl,-rpath -Wl,../../../external_libs/test-mrv
-# LDFLAGS += -lmrv -ljulia -L../../../external_libs/test-mrv
-# LDLIBS += -lmrv -ljulia
 
 # Local Variables:
 # compile-command: "make"
