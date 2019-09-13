@@ -15,8 +15,8 @@
 
 include ../plugin.mk
 
-CXXFLAGS += -fPIC -L/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
-LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
+CXXFLAGS += -fPIC -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
+LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
 
 # Local Variables:
 # compile-command: "make"
