@@ -14,6 +14,9 @@
 // version 3 along with openMHA.  If not, see <http://www.gnu.org/licenses/>.
 
 
+#include <QApplication>
+#include "mainwindow.h"
+
 #define JULIA_ENABLE_THREADING
 
 // Julia headers (for initialization and gc commands)
@@ -31,6 +34,7 @@
 #include <iostream>
 #include <dlfcn.h>
 #include <string.h>
+#include <thread>
 
 using namespace std;
 
@@ -52,13 +56,15 @@ extern int julia_main();
  * correct integration in the configuration language interface.  */
 class example1_t : public MHAPlugin::plugin_t<int> {
 public:
-    /** Do-nothing constructor.  The constructor has to take these three
+    /** The constructor has to take these three
      * arguments, but it does not have to use them. However, the base
      * class has to be initialized. */
     example1_t(algo_comm_t &ac,
                const std::string &chain_name,
                const std::string &algo_name)
-            : MHAPlugin::plugin_t<int>("", ac) {/* Do nothing in constructor */}
+            : MHAPlugin::plugin_t<int>("", ac) {
+        plot_thread = std::thread(&example1_t::plot_function, std::ref(*this));
+    }
 
     /** Release may be empty */
     void release(void) {/* Do nothing in release */}
@@ -83,7 +89,7 @@ public:
         dlerror();
         // int dlclose(void *handle); // where should I run dlclose?
 
-        jl_init_with_image__threading(NULL, (char*)libmrv_path.c_str());
+        jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
 
         cout << foo(1) << '\n';
         cout << bar(1) << '\n';
@@ -100,6 +106,8 @@ public:
         if (signal_info.channels < 1)
             throw MHA_Error(__FILE__, __LINE__,
                             "This plugin requires at least one input channel.");
+
+        return;
     }
 
     /** Signal processing performed by the plugin.
@@ -117,6 +125,8 @@ public:
         float factor = 0.1f;
         unsigned int frame;
 
+        cout << foo(1) << '\n';
+
         // Scale channel number "channel" by "factor":
         for (frame = 0; frame < signal->num_frames; frame++) {
             // Waveform channels are stored interleaved.
@@ -125,6 +135,19 @@ public:
         // Algorithms may process data in-place and return the input signal
         // structure as their output signal:
         return signal;
+    }
+
+private:
+    std::thread plot_thread;
+
+    int plot_function() {
+        int argc = 0;
+        char **argv = NULL;
+
+        QApplication application(argc, argv);
+        MainWindow mainWindow;
+        mainWindow.show();
+        return application.exec();
     }
 };
 
@@ -147,10 +170,10 @@ MHAPLUGIN_CALLBACKS(example1, example1_t, wave, wave
  */
 MHAPLUGIN_DOCUMENTATION\
 (example1,
-"example level-modification audio-channels",
-"The {\\bf simplest} example of an \\mha{} plugin.\n\n"
-"This plugin scales one channel of the input signal, working in the "
-"time domain."
+ "example level-modification audio-channels",
+ "The {\\bf simplest} example of an \\mha{} plugin.\n\n"
+ "This plugin scales one channel of the input signal, working in the "
+ "time domain."
 )
 
 // Local Variables:

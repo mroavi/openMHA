@@ -15,8 +15,48 @@
 
 include ../plugin.mk
 
-CXXFLAGS += -fPIC -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
+MOC      := moc
+UIC      := uic
+
+CXXFLAGS += -fPIC
+LDFLAGS += -fPIC
+
+# TODO: fix absolute paths and support MAC!!!!
+# julia-lib
+CXXFLAGS += -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
+CXXFLAGS += -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
 LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
+
+# qt
+INCLUDE  := \
+	-I/usr/include/x86_64-linux-gnu/qt5 \
+	-I/usr/include/x86_64-linux-gnu/qt5/QtWidgets \
+	-I/usr/include/x86_64-linux-gnu/qt5/QtCore \
+	-I/usr/include/x86_64-linux-gnu/qt5/QtGui \
+	-I../../../external_libs/qcustomplot \
+	-I$(BUILD_DIR) \
+
+CXXFLAGS += -L/usr/lib/x86_64-linux-gnu -lpthread
+CXXFLAGS += $(INCLUDE)
+LDFLAGS += $(INCLUDE) -L/usr/lib/x86_64-linux-gnu -lQt5Quick -lQt5PrintSupport -lQt5Qml -lQt5Network -lQt5Widgets -lQt5Gui -lQt5Core
+
+# mrv: rule to generate ui_mainwindow.h
+$(BUILD_DIR)/ui_mainwindow.h: mainwindow.ui
+	$(UIC) $< -o $@
+
+# mrv: process moc header with Qt's moc utility
+# (Qt's signal/slot functionality requires generation of some extra code)
+$(BUILD_DIR)/moc_mainwindow.cpp: mainwindow.h
+	$(MOC) $(INCLUDE) $< -o $@
+
+# mrv: process moc header with Qt's moc utility
+# (Qt's signal/slot functionality requires generation of some extra code)
+$(BUILD_DIR)/moc_qcustomplot.cpp: ../../../external_libs/qcustomplot/qcustomplot.h
+	$(MOC) $(INCLUDE) $< -o $@
+
+$(BUILD_DIR)/example1-mrv$(PLUGIN_EXT): $(BUILD_DIR)/ui_mainwindow.h $(BUILD_DIR)/mainwindow.o
+$(BUILD_DIR)/example1-mrv$(PLUGIN_EXT): $(BUILD_DIR)/moc_mainwindow.o $(BUILD_DIR)/moc_qcustomplot.o ../../../external_libs/qcustomplot/qcustomplot.o
+
 
 # Local Variables:
 # compile-command: "make"
