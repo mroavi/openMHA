@@ -138,6 +138,7 @@ public:
     }
 
 private:
+    // Based on: https://stackoverflow.com/questions/18163284/storing-an-stdthread-object-as-a-class-member
     std::thread plot_thread;
 
     int plot_function() {
