@@ -25,7 +25,7 @@ LDFLAGS += -fPIC
 # julia-lib
 CXXFLAGS += -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
 CXXFLAGS += -I/home/mroavi/julia/usr/include/julia -I/home/mroavi/julia/usr/include
-LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L../../../external_libs/julia-lib-test -L/home/mroavi/julia/usr/lib
+LDFLAGS += -lmrv -ljulia -lLLVM-6.0 -L../../../external_libs/x86_64-linux-gcc-7/lib -L/home/mroavi/julia/usr/lib
 
 # qt
 INCLUDE  := \

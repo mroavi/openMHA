@@ -45,6 +45,7 @@ extern void jl_atexit_hook(int);
 
 // Declare C prototype of a function defined in Julia
 extern int julia_main();
+extern int foo(int);
 }
 
 /** This C++ class implements the simplest example plugin for the
@@ -74,7 +75,7 @@ public:
      */
     void prepare(mhaconfig_t &signal_info) {
 
-        string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test/libmrv.so";
+        string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/x86_64-linux-gcc-7/lib/libmrv.so";
 
         void *handle = dlopen(libmrv_path.c_str(), RTLD_GLOBAL | RTLD_NOW);
         if (!handle) {
@@ -112,6 +113,9 @@ public:
      *   (In-place processing)
      */
     mha_wave_t *process(mha_wave_t *wave) {
+
+        qDebug() << foo(3);
+
         unsigned int channel = 0; // channels and frames counting starts with 0
         float factor = 0.1f;
         unsigned int frame;

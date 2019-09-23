@@ -18,7 +18,7 @@ include ../magic.mk
 
 EXTERNAL_LIBS=$(realpath .)
 
-TARGETS = fftw.is_installed network-asio.is_installed
+TARGETS = fftw.is_installed network-asio.is_installed package-compiler.is_installed
 
 include ../rules.mk
 
@@ -122,6 +122,10 @@ $(BUILD_DIR)/network-asio.is_installed: network-asio/.gitignore \
 network-asio/.gitignore:
 	git clone https://github.com/chriskohlhoff/asio network-asio
 	cd network-asio && git checkout 22afb86 # release 1.12.2
+
+$(BUILD_DIR)/package-compiler.is_installed:
+	julia package-compiler/build-libs.jl
+	touch $@
 
 # Local Variables:
 # compile-command: "make"

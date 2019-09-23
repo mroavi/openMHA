@@ -5,8 +5,8 @@
 # Build the shared library
 # ------------------------------------------------------------------------------
 
-output_dir =        joinpath(@__DIR__, "../submodules/openMHA/external_libs/package-compiler")
-pkg_compiler_dir =  joinpath(@__DIR__, "../submodules/PackageCompiler.jl")
+output_dir =        joinpath(@__DIR__, "../x86_64-linux-gcc-7/lib")
+pkg_compiler_dir =  joinpath(@__DIR__, "../../../PackageCompiler.jl")
 lib_src_dir =       joinpath(@__DIR__, ".")
 julia_lib_dir = "/home/mroavi/julia/usr/lib"
 
