@@ -79,8 +79,6 @@ public:
 
         string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/julia-lib-test/libmrv.so";
 
-        cout << "Hello, World!\n";
-
         void *handle = dlopen(libmrv_path.c_str(), RTLD_GLOBAL | RTLD_NOW);
         if (!handle) {
             /* Failed to load the library */
@@ -90,10 +88,6 @@ public:
         // int dlclose(void *handle); // where should I run dlclose?
 
         jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
-
-        cout << foo(1) << '\n';
-        cout << bar(1) << '\n';
-        cout << baz(1) << '\n';
 
         // call the work function, and get back a value
         julia_main();
