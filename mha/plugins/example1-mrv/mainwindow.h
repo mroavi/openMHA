@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include "qcustomplot.h" // the header file of QCustomPlot. Don't forget to add it to your project, if you use an IDE, so it gets compiled.
+#include "mha.hh"
 
 namespace Ui {
 class MainWindow;
@@ -20,10 +21,10 @@ public:
   void setupRealtimeDataDemo(QCustomPlot *customPlot);
 
 private slots:
-  void realtimeDataSlot(float *buf, int size);
+  void realtimeDataSlot(mha_wave_t *wave);
 
 signals:
-    void samplesReady(float *buf, int size);
+    void samplesReady(mha_wave_t *wave);
 
 private:
   Ui::MainWindow *ui;

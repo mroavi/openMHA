@@ -4,8 +4,6 @@
 #include <QDesktopWidget>
 #include <QMetaEnum>
 
-#define BUF_SIZE 64
-
 MainWindow::MainWindow(QWidget *parent) :
         QMainWindow(parent),
         ui(new Ui::MainWindow) {
@@ -18,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->clearMessage();
     ui->customPlot->replot();
 
-    connect(this, SIGNAL(samplesReady(float * , int)), this, SLOT(realtimeDataSlot(float * , int)),
+    connect(this, SIGNAL(samplesReady(mha_wave_t *)), this, SLOT(realtimeDataSlot(mha_wave_t *)),
             Qt::QueuedConnection);
 }
 
@@ -36,8 +34,10 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot) {
     */
     customPlot->addGraph(); // blue line
     customPlot->graph(0)->setPen(QPen(QColor(40, 110, 255)));
+    customPlot->addGraph(); // red line
+    customPlot->graph(1)->setPen(QPen(QColor(255, 110, 40)));
 
-    customPlot->xAxis->setRange(0, 64);
+    customPlot->xAxis->setRange(0, 64); // todo: accept num_frames as argument
     customPlot->axisRect()->setupFullAxesBox();
     customPlot->yAxis->setRange(-1.2, 1.2);
 
@@ -46,17 +46,21 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot) {
     connect(customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), customPlot->yAxis2, SLOT(setRange(QCPRange)));
 }
 
-void MainWindow::realtimeDataSlot(float *buf, int size) {
-    QVector<double> qbuf;
-    qbuf.reserve(size); // warning: size_t->int cast
-//    qbuf.insert(0, 64, 0.5); // at index 0, insert 64 values, all of which are equal to 0.5
-    std::copy(buf, buf + size, std::back_inserter(qbuf));
+void MainWindow::realtimeDataSlot(mha_wave_t *wave) {
 
-    QVector<double> keys(64);
-    for (int i = 0; i < BUF_SIZE; i++) {
-        keys[i] = i;
+    QVector<double> buf_channel0(wave->num_frames);
+    QVector<double> buf_channel1(wave->num_frames);
+    QVector<double> keys(wave->num_frames);
+
+    for (unsigned int frame = 0; frame < wave->num_frames; frame++) {
+        // Waveform channels are stored interleaved.
+        buf_channel0[frame] = wave->buf[wave->num_channels * frame + 0];
+        buf_channel1[frame] = wave->buf[wave->num_channels * frame + 1];
+        keys[frame] = frame;
     }
-    ui->customPlot->graph(0)->setData(keys, qbuf, true);
+
+    ui->customPlot->graph(0)->setData(keys, buf_channel0);
+    ui->customPlot->graph(1)->setData(keys, buf_channel1);
 
     ui->customPlot->replot();
 }

@@ -40,10 +40,6 @@ using namespace std;
 
 extern "C" {
 
-extern int foo(int);
-extern int bar(int);
-extern int baz(int);
-
 //extern void jl_init_with_image__threading(void *, char *);
 extern void jl_atexit_hook(int);
 
@@ -64,6 +60,7 @@ public:
                const std::string &algo_name)
             : MHAPlugin::plugin_t<int>("", ac) {
         plot_thread = std::thread(&example1_t::plot_function, std::ref(*this));
+        last_wave = new mha_wave_t;
     }
 
     /** Release may be empty */
@@ -114,34 +111,39 @@ public:
      *   with a the signal modified by this plugin.
      *   (In-place processing)
      */
-    mha_wave_t *process(mha_wave_t *signal) {
-        unsigned int channel = 1; // channels and frames counting starts with 0
+    mha_wave_t *process(mha_wave_t *wave) {
+        unsigned int channel = 0; // channels and frames counting starts with 0
         float factor = 0.1f;
         unsigned int frame;
 
-        cout << foo(1) << '\n';
-
         // Scale channel number "channel" by "factor":
-        for (frame = 0; frame < signal->num_frames; frame++) {
+        for (frame = 0; frame < wave->num_frames; frame++) {
             // Waveform channels are stored interleaved.
-            signal->buf[signal->num_channels * frame + channel] *= factor;
+            wave->buf[wave->num_channels * frame + channel] *= factor;
         }
+
+        std::memcpy(last_wave, wave, sizeof(mha_wave_t));
+        if (mainWindow) {
+            emit mainWindow->samplesReady(last_wave); // emit signal
+        }
+
         // Algorithms may process data in-place and return the input signal
         // structure as their output signal:
-        return signal;
+        return wave;
     }
 
 private:
-    // Based on: https://stackoverflow.com/questions/18163284/storing-an-stdthread-object-as-a-class-member
-    std::thread plot_thread;
+    std::thread plot_thread; // https://stackoverflow.com/questions/18163284/storing-an-stdthread-object-as-a-class-member
+    std::unique_ptr<MainWindow> mainWindow = nullptr;
+    mha_wave_t *last_wave = nullptr;
 
     int plot_function() {
         int argc = 0;
         char **argv = NULL;
 
         QApplication application(argc, argv);
-        MainWindow mainWindow;
-        mainWindow.show();
+        mainWindow = std::make_unique<MainWindow>(); // lambda capture by reference
+        mainWindow->show();
         return application.exec();
     }
 };
