@@ -111,29 +111,6 @@ public:
     mha_wave_t *process(mha_wave_t *wave) {
 
 #if 0
-        jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
-
-        jl_value_t *array_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
-
-        // Create and initialize a Julia array
-        jl_array_t *arr = jl_alloc_array_1d(array_type, 10);
-        float *arr_data = (float *) jl_array_data(arr);
-        for (size_t i = 0; i < jl_array_len(arr); i++) {
-            arr_data[i] = (float) i;
-            cout << arr_data[i] << endl;
-        }
-
-        // Call Julia function
-        jl_array_t *result = (jl_array_t *) julia_main(arr);
-        arr_data = (float *) jl_array_data(result);
-
-        // Print the result
-        for (size_t i = 0; i < jl_array_len(result); i++) {
-            cout << arr_data[i] << endl;
-        }
-#endif
-
-#if 0
         unsigned int channel = 0; // channels and frames counting starts with 0
         float factor = 0.1f;
         unsigned int frame;
@@ -151,7 +128,7 @@ public:
 
         jl_array_t *arr = jl_ptr_to_array_1d(arr_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
-        arr = (jl_array_t *) julia_main(arr);
+        (jl_array_t *) julia_main(arr);
 #endif
 
         // Visualize the signal using Qt
