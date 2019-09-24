@@ -126,8 +126,10 @@ public:
 
         jl_value_t *arr_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
 
+        // Generate a thin wrapper around the existing buffer data
         jl_array_t *arr = jl_ptr_to_array_1d(arr_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
+        // Call the function inside the shared library that was written in Julia
         (jl_array_t *) julia_main(arr);
 #endif
 
