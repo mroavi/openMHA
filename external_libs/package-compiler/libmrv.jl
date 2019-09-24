@@ -10,13 +10,14 @@
 # end
 
 # libmrv.jl
-Base.@ccallable foo(x::Cint)::Cint = 42
-Base.@ccallable bar(x::Cint)::Cint = x
-Base.@ccallable function baz(x::Cint)::Cint
-    println("\tI am baz.")
-    return 0
-end
 
-Base.@ccallable function julia_main(arr::Vector{Cfloat})::Vector{Cfloat}
-    return arr .* 2.0
+Base.@ccallable function julia_main(buf::Vector{Cfloat})::Vector{Cfloat}
+
+    factor::Cfloat = 0.1;
+    channel = 1
+    num_channels = 2
+
+    buf[channel:num_channels:end] = buf[channel:num_channels:end] .* factor
+
+    return buf
 end
