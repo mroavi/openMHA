@@ -123,7 +123,7 @@ network-asio/.gitignore:
 	git clone https://github.com/chriskohlhoff/asio network-asio
 	cd network-asio && git checkout 22afb86 # release 1.12.2
 
-$(BUILD_DIR)/package-compiler.is_installed:
+$(BUILD_DIR)/package-compiler.is_installed: package-compiler/libmrv.jl
 	julia package-compiler/build-libs.jl
 	touch $@
 
