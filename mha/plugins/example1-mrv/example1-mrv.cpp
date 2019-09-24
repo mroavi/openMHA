@@ -32,6 +32,7 @@
 
 #include "mha_plugin.hh"
 #include <iostream>
+#include <iomanip> // for std::setprecision()
 #include <dlfcn.h>
 #include <string.h>
 #include <thread>
@@ -44,8 +45,11 @@ extern "C" {
 extern void jl_atexit_hook(int);
 
 // Declare C prototype of a function defined in Julia
-extern int julia_main();
+//extern int fftw(jl_array_t *);
 extern int foo(int);
+extern int bar(int);
+extern int baz(int);
+extern jl_array_t * julia_main(jl_array_t *);
 }
 
 /** This C++ class implements the simplest example plugin for the
@@ -62,10 +66,16 @@ public:
             : MHAPlugin::plugin_t<int>("", ac) {
         plot_thread = std::thread(&example1_t::plot_function, std::ref(*this));
         last_wave = new mha_wave_t;
+
+        // https://stackoverflow.com/questions/5907031/printing-the-correct-number-of-decimal-points-with-cout
+        std::cout << std::fixed;
+        std::cout << std::setprecision(2);
     }
 
     /** Release may be empty */
-    void release(void) {/* Do nothing in release */}
+    void release(void) {
+         dlclose(dl_handle); // mrv: is this where I should run this?
+    }
 
     /** Plugin preparation. This plugin checks that the input signal has the
      * waveform domain and contains at least one channel
@@ -75,22 +85,12 @@ public:
      */
     void prepare(mhaconfig_t &signal_info) {
 
-        string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/x86_64-linux-gcc-7/lib/libmrv.so";
-
-        void *handle = dlopen(libmrv_path.c_str(), RTLD_GLOBAL | RTLD_NOW);
-        if (!handle) {
+        dl_handle = dlopen(libmrv_path.c_str(), RTLD_GLOBAL | RTLD_NOW);
+        if (!dl_handle) {
             /* Failed to load the library */
             throw MHA_Error(__FILE__, __LINE__, dlerror());
         }
         dlerror();
-        // int dlclose(void *handle); // where should I run dlclose?
-
-        jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
-
-        // call the work function, and get back a value
-        julia_main();
-
-        jl_atexit_hook(0);
 
         if (signal_info.domain != MHA_WAVEFORM)
             throw MHA_Error(__FILE__, __LINE__,
@@ -114,7 +114,28 @@ public:
      */
     mha_wave_t *process(mha_wave_t *wave) {
 
-        qDebug() << foo(3);
+        jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
+
+        // Call Julia lib function that prints an array
+        jl_value_t *array_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
+
+#if 0
+        jl_array_t *arr = jl_ptr_to_array_1d(array_type, wave->buf, wave->num_frames, 0);
+#else
+        jl_array_t *arr = jl_alloc_array_1d(array_type, 10);
+        float *arr_data = (float *) jl_array_data(arr);
+        for (size_t i = 0; i < jl_array_len(arr); i++) {
+            arr_data[i] = (float)i;
+            cout << arr_data[i] << endl;
+        }
+#endif
+
+        jl_array_t *result = (jl_array_t *)julia_main(arr);
+        arr_data = (float *) jl_array_data(result);
+
+        for (size_t i = 0; i < jl_array_len(result); i++) {
+            cout << arr_data[i] << endl;
+        }
 
         unsigned int channel = 0; // channels and frames counting starts with 0
         float factor = 0.1f;
@@ -140,6 +161,8 @@ private:
     std::thread plot_thread; // https://stackoverflow.com/questions/18163284/storing-an-stdthread-object-as-a-class-member
     std::unique_ptr<MainWindow> mainWindow = nullptr;
     mha_wave_t *last_wave = nullptr;
+    string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/x86_64-linux-gcc-7/lib/libmrv.so";
+    void *dl_handle;
 
     int plot_function() {
         int argc = 0;
