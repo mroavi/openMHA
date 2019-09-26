@@ -110,6 +110,8 @@ public:
      */
     mha_wave_t *process(mha_wave_t *wave) {
 
+        static unsigned  int counter = 0;
+
 #if 0
         unsigned int channel = 0; // channels and frames counting starts with 0
         float factor = 0.1f;
@@ -135,7 +137,7 @@ public:
 
         // Visualize the signal using Qt
         std::memcpy(last_wave, wave, sizeof(mha_wave_t));
-        if (mainWindow) {
+        if (mainWindow && ( (counter++)%16 == 0)) {
             emit mainWindow->samplesReady(last_wave); // emit signal
         }
 
