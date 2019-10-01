@@ -17,60 +17,87 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->clearMessage();
     ui->customPlot->replot();
 
-    connect(this, SIGNAL(samplesReady(mha_wave_t * )), this, SLOT(realtimeDataSlot(mha_wave_t * )),
+    connect(this, SIGNAL(samplesReady(mha_wave_t *, float *, unsigned int)), this, SLOT(realtimeDataSlot(mha_wave_t *, float *, unsigned int)),
             Qt::QueuedConnection);
 }
 
 void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot) {
+
+    // Color palette 28 from:
+    // https://digitalsynopsis.com/design/beautiful-color-schemes-combinations-palettes/
+
     demoName = "Real Time Data Demo";
 
     // configure layout
     customPlot->plotLayout()->clear(); // clear default axis rect so we can start from scratch
 
+    //-----------------------------------
     // Setup top part of the custom plot:
+    //-----------------------------------
     auto *subLayout = new QCPLayoutGrid;
 
     // Setup left sub axis
-    auto *subRectLeft = new QCPAxisRect(customPlot, false); // false means to not setup default axes
-    subRectLeft->setupFullAxesBox(true);
-    subRectLeft->axis(QCPAxis::atTop)->setLabel("Left Channel"); // add top label to the subplot
-    subRectLeft->axis(QCPAxis::atLeft)->ticker()->setTickCount(4);
-    subRectLeft->axis(QCPAxis::atBottom)->ticker()->setTickCount(5);
-    subRectLeft->axis(QCPAxis::atLeft)->setRange(-1.2, 1.2);
-    subRectLeft->axis(QCPAxis::atBottom)->setRange(0, 63); // todo: accept num_frames as argument
-    subRectLeft->axis(QCPAxis::atLeft)->grid()->setVisible(true);
-    subRectLeft->axis(QCPAxis::atBottom)->grid()->setVisible(true);
-    subLayout->addElement(0, 0, subRectLeft);
+    auto *axisTopLeft = new QCPAxisRect(customPlot, false); // false means to not setup default axes
+    axisTopLeft->setupFullAxesBox(true);
+    axisTopLeft->axis(QCPAxis::atTop)->setLabel("Left Channel"); // add top label to the subplot
+    axisTopLeft->axis(QCPAxis::atLeft)->ticker()->setTickCount(4);
+    axisTopLeft->axis(QCPAxis::atBottom)->ticker()->setTickCount(5);
+    axisTopLeft->axis(QCPAxis::atLeft)->setRange(-1.2, 1.2);
+    axisTopLeft->axis(QCPAxis::atBottom)->setRange(0, 63); // todo: accept num_frames as argument
+    axisTopLeft->axis(QCPAxis::atLeft)->grid()->setVisible(true);
+    axisTopLeft->axis(QCPAxis::atBottom)->grid()->setVisible(true);
+    subLayout->addElement(0, 0, axisTopLeft);
+    QCPGraph *graphTopLeft = customPlot->addGraph(axisTopLeft->axis(QCPAxis::atBottom),
+                                                  axisTopLeft->axis(QCPAxis::atLeft));
+    QColor colorTopLeft(0x00, 0x30, 0x49);
+    graphTopLeft->setPen(QPen(colorTopLeft));
 
     // Setup right sub axis
-    auto *subRectRight = new QCPAxisRect(customPlot, false); // false means to not setup default axes
-    subRectRight->setupFullAxesBox(true);
-    subRectRight->axis(QCPAxis::atTop)->setLabel("Right Channel"); // add top label to the subplot
-    subRectRight->axis(QCPAxis::atLeft)->setTickLabels(false); // left axis' tick labels are set by default
-    subRectRight->axis(QCPAxis::atRight)->setTickLabels(true); // right axis' tick labels are not set by default
-    subRectRight->axis(QCPAxis::atRight)->ticker()->setTickCount(4);
-    subRectRight->axis(QCPAxis::atBottom)->ticker()->setTickCount(5);
-    subRectRight->axis(QCPAxis::atRight)->setRange(-1.2, 1.2);
-    subRectRight->axis(QCPAxis::atBottom)->setRange(0, 63); // todo: accept num_frames as argument
-    subRectRight->axis(QCPAxis::atRight)->grid()->setVisible(true);
-    subRectRight->axis(QCPAxis::atBottom)->grid()->setVisible(true);
-    subLayout->addElement(0, 1, subRectRight);
+    auto *axisTopRight = new QCPAxisRect(customPlot, false); // false means to not setup default axes
+    axisTopRight->setupFullAxesBox(true);
+    axisTopRight->axis(QCPAxis::atTop)->setLabel("Right Channel"); // add top label to the subplot
+    axisTopRight->axis(QCPAxis::atLeft)->setTickLabels(false); // left axis' tick labels are set by default
+    axisTopRight->axis(QCPAxis::atRight)->setTickLabels(true); // right axis' tick labels are not set by default
+    axisTopRight->axis(QCPAxis::atRight)->ticker()->setTickCount(4);
+    axisTopRight->axis(QCPAxis::atBottom)->ticker()->setTickCount(5);
+    axisTopRight->axis(QCPAxis::atRight)->setRange(-1.2, 1.2);
+    axisTopRight->axis(QCPAxis::atBottom)->setRange(0, 63); // todo: accept num_frames as argument
+    axisTopRight->axis(QCPAxis::atRight)->grid()->setVisible(true);
+    axisTopRight->axis(QCPAxis::atBottom)->grid()->setVisible(true);
+    subLayout->addElement(0, 1, axisTopRight);
+    QCPGraph *graphTopRight = customPlot->addGraph(axisTopRight->axis(QCPAxis::atBottom),
+                                                   axisTopRight->axis(QCPAxis::atRight));
+    QColor colorTopRight(0xd6, 0x28, 0x28);
+    graphTopRight->setPen(QPen(colorTopRight));
 
+    //-------------------------------------
     // Setup bottom part of the custom plot
-    auto *wideAxisRect = new QCPAxisRect(customPlot);
-    wideAxisRect->setupFullAxesBox(true);
-    wideAxisRect->axis(QCPAxis::atTop)->setLabel("Spectrum"); // add top label to the subplot
-    wideAxisRect->axis(QCPAxis::atRight, 0)->setTickLabels(true);
+    //-------------------------------------
+    auto *axisBottom = new QCPAxisRect(customPlot);
+    axisBottom->setupFullAxesBox(true);
+    axisBottom->axis(QCPAxis::atTop)->setLabel("Spectrum"); // add top label to the subplot
+    axisBottom->axis(QCPAxis::atRight, 0)->setTickLabels(true);
+    axisBottom->axis(QCPAxis::atLeft)->setRange(0, 20);
+    axisBottom->axis(QCPAxis::atBottom)->setRange(0, 30); // todo: accept spectrum_size
+    QCPGraph *graphBottom = customPlot->addGraph(axisBottom->axis(QCPAxis::atBottom),
+                                                 axisBottom->axis(QCPAxis::atRight));
 
+    QColor colorBottom(0xf7, 0x7f, 0x00);
+    graphBottom->setLineStyle(QCPGraph::lsLine);
+    graphBottom->setPen(QPen(colorBottom.lighter(200)));
+    graphBottom->setBrush(QBrush(colorBottom));
+
+    //--------------------------------------------
     // Add top and bottom parts to the custom plot
+    //--------------------------------------------
     customPlot->plotLayout()->addElement(0, 0, subLayout); // sub-layout in first row
-    customPlot->plotLayout()->addElement(1, 0, wideAxisRect); // wide axis rect in second row
+    customPlot->plotLayout()->addElement(1, 0, axisBottom); // wide axis rect in second row
 
     // synchronize the left and right margins of the top and bottom axis rects:
     auto *marginGroup = new QCPMarginGroup(customPlot);
-    subRectLeft->setMarginGroup(QCP::msLeft, marginGroup);
-    subRectRight->setMarginGroup(QCP::msRight, marginGroup);
-    wideAxisRect->setMarginGroup(QCP::msLeft | QCP::msRight, marginGroup);
+    axisTopLeft->setMarginGroup(QCP::msLeft, marginGroup);
+    axisTopRight->setMarginGroup(QCP::msRight, marginGroup);
+    axisBottom->setMarginGroup(QCP::msLeft | QCP::msRight, marginGroup);
     // move newly created axes on "axes" layer and grids on "grid" layer:
             foreach(QCPAxisRect *rect, customPlot->axisRects()) {
                     foreach(QCPAxis *axis, rect->axes()) {
@@ -78,31 +105,31 @@ void MainWindow::setupRealtimeDataDemo(QCustomPlot *customPlot) {
                     axis->grid()->setLayer("grid");
                 }
         }
-
-    QCPGraph *subGraphLeft = customPlot->addGraph(subRectLeft->axis(QCPAxis::atBottom),
-                                                  subRectLeft->axis(QCPAxis::atLeft));
-    subGraphLeft->setPen(QPen(QColor(40, 110, 255))); // blue
-
-    QCPGraph *subGraphRight = customPlot->addGraph(subRectRight->axis(QCPAxis::atBottom),
-                                                   subRectRight->axis(QCPAxis::atRight));
-    subGraphRight->setPen(QPen(QColor(255, 110, 40))); // red
 }
 
-void MainWindow::realtimeDataSlot(mha_wave_t *wave) {
+void MainWindow::realtimeDataSlot(mha_wave_t *wave, float *spectrum, unsigned int spectrum_size) {
 
     QVector<double> buf_channel0(wave->num_frames);
     QVector<double> buf_channel1(wave->num_frames);
-    QVector<double> keys(wave->num_frames);
+    QVector<double> buf_keys(wave->num_frames);
+    QVector<double> spec(spectrum_size);
+    QVector<double> spec_keys(spectrum_size);
 
     for (unsigned int frame = 0; frame < wave->num_frames; frame++) {
         // Waveform channels are stored interleaved.
+        buf_keys[frame] = frame;
         buf_channel0[frame] = wave->buf[wave->num_channels * frame + 0];
         buf_channel1[frame] = wave->buf[wave->num_channels * frame + 1];
-        keys[frame] = frame;
     }
 
-    ui->customPlot->graph(0)->setData(keys, buf_channel0);
-    ui->customPlot->graph(1)->setData(keys, buf_channel1);
+    for (unsigned int i = 0; i < spectrum_size; i++) {
+        spec_keys[i] = i;
+        spec[i] = spectrum[i];
+    }
+
+    ui->customPlot->graph(0)->setData(buf_keys, buf_channel0);
+    ui->customPlot->graph(1)->setData(buf_keys, buf_channel1);
+    ui->customPlot->graph(2)->setData(spec_keys, spec);
 
     ui->customPlot->replot();
 }

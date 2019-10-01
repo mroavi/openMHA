@@ -45,7 +45,8 @@ extern "C" {
 extern void jl_atexit_hook(int);
 
 // Declare C prototype of a function defined in Julia
-extern jl_array_t *julia_main(jl_array_t *);
+extern int julia_main(jl_array_t *);
+extern int julia_fftw(jl_array_t *, jl_array_t *, float);
 }
 
 /** This C++ class implements the simplest example plugin for the
@@ -71,6 +72,9 @@ public:
     /** Release may be empty */
     void release(void) {
         dlclose(dl_handle); // mrv: is this where I should run this?
+        delete(last_wave);
+        delete(spectrum);
+        qDebug() << "example1_t resources released";
     }
 
     /** Plugin preparation. This plugin checks that the input signal has the
@@ -94,6 +98,9 @@ public:
         if (signal_info.channels < 1)
             throw MHA_Error(__FILE__, __LINE__,
                             "This plugin requires at least one input channel.");
+
+        spectrum = new float[signal_info.fragsize * signal_info.channels]; // TODO: this is not the real size of the spectrum array
+        sample_rate = signal_info.srate;
 
         return;
     }
@@ -123,22 +130,26 @@ public:
             wave->buf[wave->num_channels * frame + channel] *= factor;
         }
 #else
-        // Call Julia lib function
+        // Initialize Julia runtime
         jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
 
-        jl_value_t *arr_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
+        jl_value_t *element_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
 
-        // Generate a thin wrapper around the existing buffer data
-        jl_array_t *arr = jl_ptr_to_array_1d(arr_type, wave->buf, wave->num_frames * wave->num_channels, 0);
+        // Generate a thin wrappers around the existing arrays
+        jl_array_t *spectrum_wrapper = jl_ptr_to_array_1d(element_type, spectrum, 30, 0); // TODO: remove hard-coded 30
+        jl_array_t *buff_wrapper = jl_ptr_to_array_1d(element_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
         // Call the function inside the shared library that was written in Julia
-        (jl_array_t *) julia_main(arr);
+        unsigned int spectrum_size = julia_fftw(spectrum_wrapper, buff_wrapper, sample_rate);
+
+        // Call the function inside the shared library that was written in Julia
+        julia_main(buff_wrapper);
 #endif
 
         // Visualize the signal using Qt
         std::memcpy(last_wave, wave, sizeof(mha_wave_t));
         if (mainWindow && ( (counter++)%16 == 0)) {
-            emit mainWindow->samplesReady(last_wave); // emit signal
+            emit mainWindow->samplesReady(last_wave, spectrum, spectrum_size); // emit signal
         }
 
         // Algorithms may process data in-place and return the input signal
@@ -152,6 +163,9 @@ private:
     mha_wave_t *last_wave = nullptr;
     string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/x86_64-linux-gcc-7/lib/libmrv.so";
     void *dl_handle;
+    float * spectrum;
+    float sample_rate;
+
 
     int plot_function() {
         int argc = 0;
