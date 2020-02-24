@@ -7,13 +7,12 @@ using Pkg
 # Build the shared library
 # ------------------------------------------------------------------------------
 
-output_dir =        joinpath(@__DIR__, "../x86_64-linux-gcc-7/lib")
+output_dir =        joinpath(@__DIR__, "../x86_64-Darwin-clang/lib")
 pkg_compiler_dir =  joinpath(@__DIR__, "../../../PackageCompiler.jl")
 lib_src_dir =       joinpath(@__DIR__, ".")
-julia_lib_dir = "/home/mroavi/julia/usr/lib"
 
 # Activate PackageCompiler project
 Pkg.activate(pkg_compiler_dir)
 
 # Build the shared library
-run(`julia --project=$(pkg_compiler_dir)/Project.toml $(pkg_compiler_dir)/juliac.jl -vas -g2 -d $(output_dir) $(lib_src_dir)/libmrv.jl`)
+run(`julia --project=$(pkg_compiler_dir)/Project.toml $(pkg_compiler_dir)/juliac.jl -vas -O0 -g2 -d $(output_dir) $(lib_src_dir)/libmrv.jl`)
