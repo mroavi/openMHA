@@ -140,17 +140,17 @@ public:
             jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
         }
 
-        // 1-dimensional 32 bit floating point array
+        // We use 1-dimensional 32 bit floating point arrays
         jl_value_t *array_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
 
-        // Generate a thin wrappers around the existing arrays
+        // Generate a thin wrapper around the existing arrays
         // (the 0 in the last argument is a boolean indicating whether Julia should take ownership of the data)
-        jl_array_t *spectrum_wrapper = jl_ptr_to_array_1d(array_type, spectrum, 30, 0); // TODO: remove hard-coded 30
         jl_array_t *buff_wrapper = jl_ptr_to_array_1d(array_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
         // Call the function inside the shared library that was written in Julia
         unsigned int spectrum_size = 0;
-        spectrum_size = julia_fftw(spectrum_wrapper, buff_wrapper, sample_rate);
+        jl_array_t *input_spectrum_wrapper = jl_ptr_to_array_1d(array_type, spectrum, 30, 0); // TODO: remove hard-coded 30
+        spectrum_size = julia_fftw(input_spectrum_wrapper, buff_wrapper, sample_rate);
 
         // Call the function inside the shared library that was written in Julia
 //        julia_scale(buff_wrapper, 0.2);
