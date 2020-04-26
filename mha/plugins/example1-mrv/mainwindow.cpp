@@ -17,7 +17,10 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->clearMessage();
     ui->customPlot->replot();
 
-    connect(this, SIGNAL(samplesReady(mha_wave_t *, float *, unsigned int)), this, SLOT(realtimeDataSlot(mha_wave_t *, float *, unsigned int)),
+    connect(this,
+            SIGNAL(samplesReady(mha_wave_t *, float *, unsigned int)),
+            this,
+            SLOT(realtimeDataSlot(mha_wave_t *, float *, unsigned int)),
             Qt::QueuedConnection);
 }
 

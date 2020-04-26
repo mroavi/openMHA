@@ -45,8 +45,10 @@ extern "C" {
 extern void jl_atexit_hook(int);
 
 // Declare C prototype of a function defined in Julia
-extern int julia_main(jl_array_t *);
+extern int julia_scale(jl_array_t *, float);
 extern int julia_fftw(jl_array_t *, jl_array_t *, float);
+extern int julia_main(jl_array_t *);
+extern int julia_main2(jl_array_t *, jl_array_t *, jl_array_t *);
 }
 
 /** This C++ class implements the simplest example plugin for the
@@ -118,6 +120,8 @@ public:
     mha_wave_t *process(mha_wave_t *wave) {
 
         static unsigned  int counter = 0;
+        static float z_prev_m = 0.0;
+        static float z_prev_v = 1000.0;
 
 #if 0
         unsigned int channel = 0; // channels and frames counting starts with 0
@@ -130,20 +134,32 @@ public:
             wave->buf[wave->num_channels * frame + channel] *= factor;
         }
 #else
-        // Initialize Julia runtime
-        jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
+        // Do this once
+        if(counter == 0) {
+            // Initialize Julia runtime
+            jl_init_with_image__threading(NULL, (char *) libmrv_path.c_str());
+        }
 
-        jl_value_t *element_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
+        // 1-dimensional 32 bit floating point array
+        jl_value_t *array_type = jl_apply_array_type((jl_value_t *) jl_float32_type, 1);
 
         // Generate a thin wrappers around the existing arrays
-        jl_array_t *spectrum_wrapper = jl_ptr_to_array_1d(element_type, spectrum, 30, 0); // TODO: remove hard-coded 30
-        jl_array_t *buff_wrapper = jl_ptr_to_array_1d(element_type, wave->buf, wave->num_frames * wave->num_channels, 0);
+        // (the 0 in the last argument is a boolean indicating whether Julia should take ownership of the data)
+        jl_array_t *spectrum_wrapper = jl_ptr_to_array_1d(array_type, spectrum, 30, 0); // TODO: remove hard-coded 30
+        jl_array_t *buff_wrapper = jl_ptr_to_array_1d(array_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
         // Call the function inside the shared library that was written in Julia
-        unsigned int spectrum_size = julia_fftw(spectrum_wrapper, buff_wrapper, sample_rate);
+        unsigned int spectrum_size = 0;
+        spectrum_size = julia_fftw(spectrum_wrapper, buff_wrapper, sample_rate);
 
         // Call the function inside the shared library that was written in Julia
-        julia_main(buff_wrapper);
+//        julia_scale(buff_wrapper, 0.2);
+//        julia_main(buff_wrapper);
+
+        jl_array_t *z_prev_m_wrapper = jl_ptr_to_array_1d(array_type, &z_prev_m, 1, 0);
+        jl_array_t *z_prev_v_wrapper = jl_ptr_to_array_1d(array_type, &z_prev_v, 1, 0);
+        julia_main2(buff_wrapper, z_prev_m_wrapper, z_prev_v_wrapper);
+//        qDebug() << z_prev_m;
 #endif
 
         // Visualize the signal using Qt
