@@ -15,9 +15,24 @@ Base.@ccallable function julia_scale(buf::Vector{Cfloat}, factor::Cfloat)::Cint
     return 0
 end
 
-Base.@ccallable function julia_fftw(fttres::Vector{Cfloat}, buf::Vector{Cfloat}, samplerate::Cfloat)::Cint
 
-    sample_buffer = SampleBuf(buf, samplerate)
+Base.@ccallable function julia_spectrum_size(buf::Vector{Cfloat}, samplerate::Cfloat)::Cint
+
+    num_channels = 2
+    channel_buf = buf[1:num_channels:end]
+    sample_buffer = SampleBuf(channel_buf, samplerate)
+
+    fmin = 0Hz
+    fmax = 10000Hz
+
+    return length(abs.(fft(sample_buffer)[fmin..fmax]).data)
+end
+
+Base.@ccallable function julia_fftw(fttres::Vector{Cfloat}, buf::Vector{Cfloat}, samplerate::Cfloat, channel::Cint)::Cint
+
+    num_channels = 2
+    channel_buf = buf[channel:num_channels:end]
+    sample_buffer = SampleBuf(channel_buf, samplerate)
 
     fmin = 0Hz
     fmax = 10000Hz

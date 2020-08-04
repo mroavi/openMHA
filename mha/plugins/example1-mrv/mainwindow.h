@@ -21,10 +21,10 @@ public:
   void setupRealtimeDataDemo(QCustomPlot *customPlot);
 
 private slots:
-  void realtimeDataSlot(mha_wave_t *wave, float *spectrum, unsigned int spectrum_size);
+  void realtimeDataSlot(mha_wave_t *wave, float *input_spectrum, float *output_spectrum, unsigned int spectrum_size);
 
 signals:
-    void samplesReady(mha_wave_t *wave, float *spectrum, unsigned int spectrum_size);
+    void samplesReady(mha_wave_t *wave, float *input_spectrum, float *output_spectrum, unsigned int spectrum_size);
 
 private:
   Ui::MainWindow *ui;

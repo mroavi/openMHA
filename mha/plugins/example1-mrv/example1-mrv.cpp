@@ -46,9 +46,10 @@ extern void jl_atexit_hook(int);
 
 // Declare C prototype of a function defined in Julia
 extern int julia_scale(jl_array_t *, float);
-extern int julia_fftw(jl_array_t *, jl_array_t *, float);
+extern int julia_fftw(jl_array_t *, jl_array_t *, float, int);
 extern int julia_main(jl_array_t *);
 extern int julia_main2(jl_array_t *, jl_array_t *, jl_array_t *);
+extern int julia_spectrum_size(jl_array_t *, float);
 }
 
 /** This C++ class implements the simplest example plugin for the
@@ -75,7 +76,8 @@ public:
     void release(void) {
         dlclose(dl_handle); // mrv: is this where I should run this?
         delete(last_wave);
-        delete(spectrum);
+        delete(input_spectrum);
+        delete(output_spectrum);
         qDebug() << "example1_t resources released";
     }
 
@@ -101,7 +103,8 @@ public:
             throw MHA_Error(__FILE__, __LINE__,
                             "This plugin requires at least one input channel.");
 
-        spectrum = new float[signal_info.fragsize * signal_info.channels]; // TODO: this is not the real size of the spectrum array
+        input_spectrum = new float[signal_info.fragsize * signal_info.channels]; // TODO: this is not the real size of the input spectrum array
+        output_spectrum = new float[signal_info.fragsize * signal_info.channels]; // TODO: this is not the real size of the output spectrum array
         sample_rate = signal_info.srate;
 
         return;
@@ -122,6 +125,7 @@ public:
         static unsigned  int counter = 0;
         static float z_prev_m = 0.0;
         static float z_prev_v = 1000.0;
+        static int spectrum_size;
 
 #if 0
         unsigned int channel = 0; // channels and frames counting starts with 0
@@ -148,26 +152,29 @@ public:
         jl_array_t *buff_wrapper = jl_ptr_to_array_1d(array_type, wave->buf, wave->num_frames * wave->num_channels, 0);
 
         // Call the function inside the shared library that was written in Julia
-        unsigned int spectrum_size = 0;
-        jl_array_t *input_spectrum_wrapper = jl_ptr_to_array_1d(array_type, spectrum, 30, 0); // TODO: remove hard-coded 30
-        spectrum_size = julia_fftw(input_spectrum_wrapper, buff_wrapper, sample_rate);
-
-        // Call the function inside the shared library that was written in Julia
-//        julia_scale(buff_wrapper, 0.2);
-//        julia_main(buff_wrapper);
-
         jl_array_t *z_prev_m_wrapper = jl_ptr_to_array_1d(array_type, &z_prev_m, 1, 0);
         jl_array_t *z_prev_v_wrapper = jl_ptr_to_array_1d(array_type, &z_prev_v, 1, 0);
         julia_main2(buff_wrapper, z_prev_m_wrapper, z_prev_v_wrapper);
-//        qDebug() << z_prev_m;
+
+//        // Do this once
+//        if(counter == 0) {
+//            // Get the spectrum size (number of frequency bins)
+//            spectrum_size = julia_spectrum_size(buff_wrapper, sample_rate);
+//        }
+//
+//        jl_array_t *input_spectrum_wrapper = jl_ptr_to_array_1d(array_type, input_spectrum, spectrum_size, 0);
+//        julia_fftw(input_spectrum_wrapper, buff_wrapper, sample_rate, 1);
+//
+//        jl_array_t *output_spectrum_wrapper = jl_ptr_to_array_1d(array_type, output_spectrum, spectrum_size, 0);
+//        spectrum_size = julia_fftw(output_spectrum_wrapper, buff_wrapper, sample_rate, 2);
 #endif
 
-        // Visualize the signal using Qt
-        std::memcpy(last_wave, wave, sizeof(mha_wave_t));
-        if (mainWindow && ( (counter++)%16 == 0)) {
-            emit mainWindow->samplesReady(last_wave, spectrum, spectrum_size); // emit signal
-        }
-
+//        // Visualize the signal using Qt
+//        std::memcpy(last_wave, wave, sizeof(mha_wave_t));
+//        if (mainWindow && ( (counter++)%16 == 0)) {
+//            emit mainWindow->samplesReady(last_wave, input_spectrum, output_spectrum, spectrum_size); // emit signal
+//        }
+//
         // Algorithms may process data in-place and return the input signal
         // structure as their output signal:
         return wave;
@@ -179,7 +186,8 @@ private:
     mha_wave_t *last_wave = nullptr;
     string libmrv_path = "/home/mroavi/repos/TinyB/submodules/openMHA/external_libs/x86_64-linux-gcc-7/lib/libmrv.so";
     void *dl_handle;
-    float * spectrum;
+    float * input_spectrum;
+    float * output_spectrum;
     float sample_rate;
 
 
